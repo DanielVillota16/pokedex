@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "637330169797",
+    "firebase_url": "https://reto2-cbff4.firebaseio.com",
+    "project_id": "reto2-cbff4",
+    "storage_bucket": "reto2-cbff4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:637330169797:android:571ad7a6f294f793cbb5ac",
+        "android_client_info": {
+          "package_name": "co.daniel16.pokedex"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "637330169797-km8cetl9hiou37t19m4rqvn1q7lmibm4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoL-teNNR2NM_kD7zfSjo4girUTwWnvCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "637330169797-km8cetl9hiou37t19m4rqvn1q7lmibm4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:637330169797:android:97725b1b81be8398cbb5ac",
+        "android_client_info": {
+          "package_name": "co.daniel16.pokedex_reto2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "637330169797-km8cetl9hiou37t19m4rqvn1q7lmibm4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoL-teNNR2NM_kD7zfSjo4girUTwWnvCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "637330169797-km8cetl9hiou37t19m4rqvn1q7lmibm4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
