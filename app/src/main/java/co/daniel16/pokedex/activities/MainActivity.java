@@ -14,6 +14,7 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.UUID;
 
 import co.daniel16.pokedex.R;
@@ -53,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 break;
                             }
                         } else {
-                            User user = new User(UUID.randomUUID().toString(), username, new ArrayList<>());
+                            User user = new User(UUID.randomUUID().toString(), username);
                             db.collection("users").document(user.getId()).set(user);
                             goToMyPokemonActivity(user);
                         }
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void goToMyPokemonActivity(User user) {
         Intent intent = new Intent(this, MyPokemonsActivity.class);
-        intent.putExtra("username", user);
+        intent.putExtra("myUser", user);
         startActivity(intent);
     }
 }

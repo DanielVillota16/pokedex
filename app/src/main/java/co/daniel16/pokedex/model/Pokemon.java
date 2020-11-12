@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 public class Pokemon implements Serializable {
 
-    private String id;
     private String name;
     private String type;
     private String sprite;
@@ -16,8 +15,7 @@ public class Pokemon implements Serializable {
     public Pokemon() {
     }
 
-    public Pokemon(String id, String name, String type, String sprite, int defense, int attack, int speed, int life) {
-        this.id = id;
+    public Pokemon(String name, String type, String sprite, int defense, int attack, int speed, int life) {
         this.name = name;
         this.type = type;
         this.sprite = sprite;
@@ -25,14 +23,6 @@ public class Pokemon implements Serializable {
         this.attack = attack;
         this.speed = speed;
         this.life = life;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getName() {

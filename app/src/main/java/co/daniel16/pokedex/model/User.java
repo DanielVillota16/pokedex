@@ -7,15 +7,15 @@ public class User implements Serializable {
 
     private String id;
     private String username;
-    private ArrayList<Pokemon> pokemons;
+    private ArrayList<String> pokemons;
 
     public User() {
     }
 
-    public User(String id, String username, ArrayList<Pokemon> pokemons) {
+    public User(String id, String username) {
         this.id = id;
         this.username = username;
-        this.pokemons = pokemons;
+        this.pokemons = new ArrayList<>();
     }
 
     public String getId() {
@@ -34,11 +34,11 @@ public class User implements Serializable {
         this.username = username;
     }
 
-    public ArrayList<Pokemon> getPokemons() {
+    public ArrayList<String> getPokemons() {
         return pokemons;
     }
 
-    public void setPokemons(ArrayList<Pokemon> pokemons) {
+    public void setPokemons(ArrayList<String> pokemons) {
         this.pokemons = pokemons;
     }
 }
