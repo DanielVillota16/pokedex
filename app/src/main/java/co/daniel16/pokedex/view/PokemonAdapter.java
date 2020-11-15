@@ -35,6 +35,11 @@ public class PokemonAdapter extends RecyclerView.Adapter<PokemonView> {
         this.notifyDataSetChanged();
     }
 
+    public void addPokemon(Pokemon pokemon){
+        this.pokemons.add(pokemon);
+        this.notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public PokemonView onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

@@ -64,10 +64,12 @@ public class SelectedPokemonActivity extends AppCompatActivity implements View.O
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.freeBtn) {
-            user.getPokemons().remove(pokemon.getName());
-            db.collection("users").document(user.getId()).set(user);
-            Toast.makeText(this, pokemon.getName() + " ha sido liberado!", Toast.LENGTH_LONG).show();
-            freeBtn.setClickable(false);
+            boolean removed = user.getPokemons().remove(pokemon.getName());
+            if(removed){
+                db.collection("users").document(user.getId()).set(user);
+                Toast.makeText(this, pokemon.getName() + " ha sido liberado!", Toast.LENGTH_LONG).show();
+                freeBtn.setClickable(false);
+            } else Toast.makeText(this, "No se puede soltar porque no tienes a este pokemon!", Toast.LENGTH_LONG).show();
         }
     }
 

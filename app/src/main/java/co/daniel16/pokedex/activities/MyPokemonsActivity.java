@@ -32,6 +32,9 @@ import co.daniel16.pokedex.view.PokemonAdapter;
 
 public class MyPokemonsActivity extends AppCompatActivity implements View.OnClickListener {
 
+    public static final int INVOKED_IN_LOADING = 0;
+    public static final int INVOKED_LATER = 1;
+
     private EditText pokemonToCatchET;
     private Button catchBtn;
     private EditText searchPokemonET;
@@ -42,6 +45,7 @@ public class MyPokemonsActivity extends AppCompatActivity implements View.OnClic
     private User myUser;
     private FirebaseFirestore db;
     private ListenerRegistration listener;
+    private boolean searching;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,27 +70,33 @@ public class MyPokemonsActivity extends AppCompatActivity implements View.OnClic
         adapter.setUser(myUser);
         pokemonsListRV.setAdapter(adapter);
 
-        loadPokemonsInView();
+        searching = false;
+
+        loadPokemonsInView(INVOKED_IN_LOADING);
 
     }
 
     private void subscribeToPokemons() {
         Query query = db.collection("users").whereEqualTo("id", myUser.getId());
         listener = query.addSnapshotListener( (data, error) -> {
-            ArrayList<String> poks = new ArrayList<>();
-            for(DocumentSnapshot doc : data.getDocuments()){
-                poks.addAll(doc.toObject(User.class).getPokemons());
-                break;
-            }
-            ArrayList<Pokemon> pokemons = new ArrayList<>();
-            Query q = db.collection("pokemons").whereIn("name", poks);
-            q.get().addOnCompleteListener(task -> {
-                for(DocumentSnapshot doc : task.getResult()){
-                    pokemons.add(doc.toObject(Pokemon.class));
+            if(!searching){
+                ArrayList<String> poks = new ArrayList<>();
+                for(DocumentSnapshot doc : data.getDocuments()){
+                    User updatedUser = doc.toObject(User.class);
+                    poks.addAll(updatedUser.getPokemons());
+                    myUser = updatedUser;
+                    break;
                 }
-                adapter.getPokemons().clear();
-                adapter.addPokemons(pokemons);
-            });
+                ArrayList<Pokemon> pokemons = new ArrayList<>();
+                Query q = db.collection("pokemons").whereIn("name", poks);
+                q.get().addOnCompleteListener(task -> {
+                    for(DocumentSnapshot doc : task.getResult()){
+                        pokemons.add(doc.toObject(Pokemon.class));
+                    }
+                    adapter.getPokemons().clear();
+                    adapter.addPokemons(pokemons);
+                });
+            }
         });
     }
 
@@ -96,7 +106,7 @@ public class MyPokemonsActivity extends AppCompatActivity implements View.OnClic
         super.onDestroy();
     }
 
-    private void loadPokemonsInView() {
+    private void loadPokemonsInView(int whenInvoked) {
         ArrayList<Pokemon> pokemons = new ArrayList<>();
         Query query = db.collection("pokemons").whereIn("name", myUser.getPokemons());
         query.get().addOnCompleteListener(task->{
@@ -105,9 +115,8 @@ public class MyPokemonsActivity extends AppCompatActivity implements View.OnClic
             }
             adapter.getPokemons().clear();
             adapter.addPokemons(pokemons);
-            subscribeToPokemons();
+            if(whenInvoked==INVOKED_IN_LOADING) subscribeToPokemons();
         });
-
     }
 
     @Override
@@ -134,12 +143,38 @@ public class MyPokemonsActivity extends AppCompatActivity implements View.OnClic
                             } else {
                                 getPokemonFromAPI(name);
                             }
-                        } else Toast.makeText(this, "There was an error when searching in pokemons database collection", Toast.LENGTH_SHORT).show();
+                        } else Toast.makeText(this, "Hubo un error al buscar este pokemon!", Toast.LENGTH_SHORT).show();
                     });
                 }
                 break;
             case R.id.searchPokemonBtn:
-                String search = searchPokemonET.getText().toString();
+                searching =! searching;
+                if(searchPokemonBtn.getText().equals(">")){
+                    String search = searchPokemonET.getText().toString();
+                    searchPokemonBtn.setText("X");
+                    searchPokemonET.setText("");
+                    searchPokemonET.setEnabled(false);
+                    Query q = db.collection("pokemons").whereEqualTo("name", search);
+                    q.get().addOnCompleteListener(task->{
+                        if(task.getResult().size()>0){
+                            for(DocumentSnapshot doc : task.getResult()){
+                                Pokemon pokemon = doc.toObject(Pokemon.class);
+                                adapter.getPokemons().clear();
+                                adapter.addPokemon(pokemon);
+                                if(myUser.getPokemons().contains(pokemon.getName()))
+                                    Toast.makeText(this, "Tienes a este pokemon!", Toast.LENGTH_LONG).show();
+                                else
+                                    Toast.makeText(this, "Aun no tienes a este pokemon!", Toast.LENGTH_LONG).show();
+                                break;
+                            }
+                        } else Toast.makeText(this, "Este pokemon no existe!", Toast.LENGTH_SHORT).show();
+                    });
+                } else {
+                    searchPokemonET.setEnabled(true);
+                    searchPokemonBtn.setText(">");
+                    searchPokemonET.setText("");
+                    loadPokemonsInView(INVOKED_LATER);
+                }
 
         }
     }
@@ -159,20 +194,13 @@ public class MyPokemonsActivity extends AppCompatActivity implements View.OnClic
                     attack = pokemon.getStats().get(1).getBaseStat(),
                     speed = pokemon.getStats().get(5).getBaseStat(),
                     life = pokemon.getStats().get(0).getBaseStat();
-                Pokemon pok = new Pokemon(name, types,sprite, def, attack, speed, life);
+                Pokemon pok = new Pokemon(name, types, sprite, def, attack, speed, life);
                 db.collection("pokemons").document(pok.getName()).set(pok);
                 myUser.getPokemons().add(pok.getName());
                 db.collection("users").document(myUser.getId()).set(myUser);
             } else
                 runOnUiThread(()->Toast.makeText(this, "Este pokemon no existe!", Toast.LENGTH_LONG).show());
         }).start();
-    }
-
-    public void goToSelectedPokemonActivity(Pokemon pokemon){
-        Intent intent = new Intent(this, SelectedPokemonActivity.class);
-        intent.putExtra("pokemon", pokemon);
-        intent.putExtra("user", myUser);
-        startActivity(intent);
     }
 
 }
