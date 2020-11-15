@@ -1,11 +1,12 @@
 package co.daniel16.pokedex.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class Pokemon implements Serializable {
 
     private String name;
-    private String type;
+    private ArrayList<String> types;
     private String sprite;
     private int defense;
     private int attack;
@@ -15,9 +16,9 @@ public class Pokemon implements Serializable {
     public Pokemon() {
     }
 
-    public Pokemon(String name, String type, String sprite, int defense, int attack, int speed, int life) {
+    public Pokemon(String name, ArrayList<String> types, String sprite, int defense, int attack, int speed, int life) {
         this.name = name;
-        this.type = type;
+        this.types = types;
         this.sprite = sprite;
         this.defense = defense;
         this.attack = attack;
@@ -33,12 +34,12 @@ public class Pokemon implements Serializable {
         this.name = name;
     }
 
-    public String getType() {
-        return type;
+    public ArrayList<String> getType() {
+        return types;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setType(ArrayList<String> types) {
+        this.types = types;
     }
 
     public String getSprite() {
