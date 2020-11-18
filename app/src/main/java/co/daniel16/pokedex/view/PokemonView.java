@@ -45,7 +45,8 @@ public class PokemonView extends RecyclerView.ViewHolder implements View.OnClick
         if(pokemon != null) {
             pokeName.setText(pokemon.getName());
             Glide.with(root).load(pokemon.getSprite()).into(pokeImg);
-        } else Toast.makeText(root.getContext(), "No se ha podido cargar la imagen de: " + pokemon.getName(), Toast.LENGTH_LONG).show();
+        } else
+            Toast.makeText(root.getContext(), "No se ha podido cargar la imagen de: " + pokemon.getName(), Toast.LENGTH_LONG).show();
     }
 
     @Override

@@ -72,33 +72,57 @@ public class MyPokemonsActivity extends AppCompatActivity implements View.OnClic
 
         searching = false;
 
-        loadPokemonsInView(INVOKED_IN_LOADING);
+        subscribeToPokemons();
 
     }
 
     private void subscribeToPokemons() {
         Query query = db.collection("users").whereEqualTo("id", myUser.getId());
         listener = query.addSnapshotListener( (data, error) -> {
+            for(DocumentSnapshot doc : data.getDocuments()){
+                myUser = doc.toObject(User.class);
+                adapter.setUser(myUser);
+                break;
+            }
             if(!searching){
-                ArrayList<String> poks = new ArrayList<>();
-                for(DocumentSnapshot doc : data.getDocuments()){
-                    User updatedUser = doc.toObject(User.class);
-                    poks.addAll(updatedUser.getPokemons());
-                    myUser = updatedUser;
-                    break;
+                if(!myUser.getPokemons().isEmpty()){
+                    ArrayList<Pokemon> pokemons = new ArrayList<>();
+                    Query q = db.collection("pokemons");
+                    q.get().addOnCompleteListener(task -> {
+                        for(DocumentSnapshot doc : task.getResult()) {
+                            Pokemon pokemon = doc.toObject(Pokemon.class);
+                            if(myUser.getPokemons().contains(pokemon.getName()))
+                                pokemons.add(pokemon);
+                        }
+                        loadPokemonsInView(pokemons);
+                    });
+                } else {
+                    loadPokemonsInView(new ArrayList<>());
                 }
-                ArrayList<Pokemon> pokemons = new ArrayList<>();
-                Query q = db.collection("pokemons").whereIn("name", poks);
-                q.get().addOnCompleteListener(task -> {
-                    for(DocumentSnapshot doc : task.getResult()){
-                        pokemons.add(doc.toObject(Pokemon.class));
-                    }
-                    adapter.getPokemons().clear();
-                    adapter.addPokemons(pokemons);
-                });
             }
         });
     }
+
+    /*@Override
+    protected void onResume() {
+        if(!searching){
+            if(!myUser.getPokemons().isEmpty()){
+                ArrayList<Pokemon> pokemons = new ArrayList<>();
+                Query q = db.collection("pokemons");
+                q.get().addOnCompleteListener(task -> {
+                    for(DocumentSnapshot doc : task.getResult()) {
+                        Pokemon pokemon = doc.toObject(Pokemon.class);
+                        if(myUser.getPokemons().contains(pokemon.getName()))
+                            pokemons.add(pokemon);
+                    }
+                    loadPokemonsInView(pokemons);
+                });
+            } else {
+                loadPokemonsInView(new ArrayList<>());
+            }
+        }
+        super.onResume();
+    }*/
 
     @Override
     protected void onDestroy() {
@@ -106,17 +130,9 @@ public class MyPokemonsActivity extends AppCompatActivity implements View.OnClic
         super.onDestroy();
     }
 
-    private void loadPokemonsInView(int whenInvoked) {
-        ArrayList<Pokemon> pokemons = new ArrayList<>();
-        Query query = db.collection("pokemons").whereIn("name", myUser.getPokemons());
-        query.get().addOnCompleteListener(task->{
-            for(DocumentSnapshot doc : task.getResult()){
-                pokemons.add(doc.toObject(Pokemon.class));
-            }
-            adapter.getPokemons().clear();
-            adapter.addPokemons(pokemons);
-            if(whenInvoked==INVOKED_IN_LOADING) subscribeToPokemons();
-        });
+    private void loadPokemonsInView(ArrayList<Pokemon> pokemons) {
+        adapter.getPokemons().clear();
+        adapter.addPokemons(pokemons);
     }
 
     @Override
@@ -125,7 +141,8 @@ public class MyPokemonsActivity extends AppCompatActivity implements View.OnClic
             case R.id.catchBtn:
                 String name = pokemonToCatchET.getText().toString()
                         .toLowerCase()
-                        .replaceAll(" ", "-");
+                        .replaceAll(" ", "-")
+                        .trim();
                 boolean alreadyCaught = myUser.getPokemons().contains(name);
                 if (alreadyCaught) {
                     Toast.makeText(this, "Ya tienes a este Pokemon!", Toast.LENGTH_LONG).show();
@@ -138,69 +155,118 @@ public class MyPokemonsActivity extends AppCompatActivity implements View.OnClic
                                     Pokemon pokemon = document.toObject(Pokemon.class);
                                     myUser.getPokemons().add(pokemon.getName());
                                     db.collection("users").document(myUser.getId()).set(myUser);
+                                    Toast.makeText(this, "Has atrapado a " + pokemon.getName() + "!", Toast.LENGTH_SHORT).show();
                                     break;
                                 }
-                            } else {
+                            } else
                                 getPokemonFromAPI(name);
-                            }
-                        } else Toast.makeText(this, "Hubo un error al buscar este pokemon!", Toast.LENGTH_SHORT).show();
+                        } else
+                            Toast.makeText(this, "Hubo un error al buscar este pokemon!", Toast.LENGTH_SHORT).show();
                     });
                 }
                 break;
             case R.id.searchPokemonBtn:
-                searching =! searching;
                 if(searchPokemonBtn.getText().equals(">")){
-                    String search = searchPokemonET.getText().toString();
+                    searching = true;
+                    String search = searchPokemonET.getText().toString()
+                            .toLowerCase()
+                            .replaceAll(" ", "-")
+                            .trim();
                     searchPokemonBtn.setText("X");
-                    searchPokemonET.setText("");
                     searchPokemonET.setEnabled(false);
                     Query q = db.collection("pokemons").whereEqualTo("name", search);
-                    q.get().addOnCompleteListener(task->{
-                        if(task.getResult().size()>0){
-                            for(DocumentSnapshot doc : task.getResult()){
+                    q.get().addOnCompleteListener(task-> {
+                        if (task.getResult().size() > 0) {
+                            for (DocumentSnapshot doc : task.getResult()) {
                                 Pokemon pokemon = doc.toObject(Pokemon.class);
-                                adapter.getPokemons().clear();
-                                adapter.addPokemon(pokemon);
-                                if(myUser.getPokemons().contains(pokemon.getName()))
+                                ArrayList<Pokemon> pokList = new ArrayList<>();
+                                pokList.add(pokemon);
+                                loadPokemonsInView(pokList);
+                                if (myUser.getPokemons().contains(pokemon.getName()))
                                     Toast.makeText(this, "Tienes a este pokemon!", Toast.LENGTH_LONG).show();
                                 else
                                     Toast.makeText(this, "Aun no tienes a este pokemon!", Toast.LENGTH_LONG).show();
                                 break;
                             }
-                        } else Toast.makeText(this, "Este pokemon no existe!", Toast.LENGTH_SHORT).show();
+                        } else
+                            searchPokemonInAPI(search);
                     });
                 } else {
+                    searching = false;
                     searchPokemonET.setEnabled(true);
                     searchPokemonBtn.setText(">");
                     searchPokemonET.setText("");
-                    loadPokemonsInView(INVOKED_LATER);
+                    if(!myUser.getPokemons().isEmpty()){
+                        ArrayList<Pokemon> pokemons = new ArrayList<>();
+                        Query q = db.collection("pokemons");
+                        q.get().addOnCompleteListener(task -> {
+                            for(DocumentSnapshot doc : task.getResult()) {
+                                Pokemon pokemon = doc.toObject(Pokemon.class);
+                                if(myUser.getPokemons().contains(pokemon.getName()))
+                                    pokemons.add(pokemon);
+                            }
+                            loadPokemonsInView(pokemons);
+                        });
+                    } else
+                        loadPokemonsInView(new ArrayList<>());
                 }
-
         }
     }
 
+    private void searchPokemonInAPI(String name) {
+        if(!name.equals(""))
+            new Thread(() -> {
+                HTTPSWebUtilDomi https = new HTTPSWebUtilDomi();
+                Gson gson = new Gson();
+                String json = https.GETrequest("https://pokeapi.co/api/v2/pokemon/" + name + "/");
+                PokemonAPI pokemon = gson.fromJson(json, PokemonAPI.class);
+                if (pokemon != null) {
+                    ArrayList<String> types = new ArrayList<>();
+                    for (Type type : pokemon.getTypes())
+                        types.add(type.getType().getName());
+                    String sprite = pokemon.getSprites().getFrontDefault();
+                    int def = pokemon.getStats().get(2).getBaseStat(),
+                            attack = pokemon.getStats().get(1).getBaseStat(),
+                            speed = pokemon.getStats().get(5).getBaseStat(),
+                            life = pokemon.getStats().get(0).getBaseStat();
+                    Pokemon pok = new Pokemon(name, types, sprite, def, attack, speed, life);
+                    db.collection("pokemons").document(name).set(pok);
+                    ArrayList<Pokemon> pokList = new ArrayList<>();
+                    pokList.add(pok);
+                    runOnUiThread(()->loadPokemonsInView(pokList));
+                } else
+                    runOnUiThread(() -> Toast.makeText(this, "Este pokemon no existe!", Toast.LENGTH_LONG).show());
+            }).start();
+        else
+            Toast.makeText(this, "Este pokemon no existe!", Toast.LENGTH_LONG).show();
+    }
+
     public void getPokemonFromAPI(String name) {
-        new Thread(()->{
-            HTTPSWebUtilDomi https = new HTTPSWebUtilDomi();
-            Gson gson = new Gson();
-            String json = https.GETrequest("https://pokeapi.co/api/v2/pokemon/" + name + "/");
-            PokemonAPI pokemon = gson.fromJson(json, PokemonAPI.class);
-            if(pokemon != null) {
-                ArrayList<String> types = new ArrayList<>();
-                for(Type type : pokemon.getTypes())
-                    types.add(type.getType().getName());
-                String sprite = pokemon.getSprites().getFrontDefault();
-                int def = pokemon.getStats().get(2).getBaseStat(),
-                    attack = pokemon.getStats().get(1).getBaseStat(),
-                    speed = pokemon.getStats().get(5).getBaseStat(),
-                    life = pokemon.getStats().get(0).getBaseStat();
-                Pokemon pok = new Pokemon(name, types, sprite, def, attack, speed, life);
-                db.collection("pokemons").document(pok.getName()).set(pok);
-                myUser.getPokemons().add(pok.getName());
-                db.collection("users").document(myUser.getId()).set(myUser);
-            } else
-                runOnUiThread(()->Toast.makeText(this, "Este pokemon no existe!", Toast.LENGTH_LONG).show());
-        }).start();
+        if(!name.equals(""))
+            new Thread(()->{
+                HTTPSWebUtilDomi https = new HTTPSWebUtilDomi();
+                Gson gson = new Gson();
+                String json = https.GETrequest("https://pokeapi.co/api/v2/pokemon/" + name + "/");
+                PokemonAPI pokemon = gson.fromJson(json, PokemonAPI.class);
+                if(pokemon != null) {
+                    ArrayList<String> types = new ArrayList<>();
+                    for(Type type : pokemon.getTypes())
+                        types.add(type.getType().getName());
+                    String sprite = pokemon.getSprites().getFrontDefault();
+                    int def = pokemon.getStats().get(2).getBaseStat(),
+                        attack = pokemon.getStats().get(1).getBaseStat(),
+                        speed = pokemon.getStats().get(5).getBaseStat(),
+                        life = pokemon.getStats().get(0).getBaseStat();
+                    Pokemon pok = new Pokemon(name, types, sprite, def, attack, speed, life);
+                    myUser.getPokemons().add(pok.getName());
+                    db.collection("pokemons").document(name).set(pok);
+                    db.collection("users").document(myUser.getId()).set(myUser);
+                    runOnUiThread(()->Toast.makeText(this, "Has atrapado a " + name + "!", Toast.LENGTH_SHORT).show());
+                } else
+                    runOnUiThread(()->Toast.makeText(this, "Este pokemon no existe!", Toast.LENGTH_LONG).show());
+            }).start();
+        else
+            Toast.makeText(this, "Este pokemon no existe!", Toast.LENGTH_LONG).show();
     }
 
 }

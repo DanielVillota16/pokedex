@@ -10,7 +10,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import co.daniel16.pokedex.R;
 import co.daniel16.pokedex.model.Pokemon;
@@ -64,12 +67,26 @@ public class SelectedPokemonActivity extends AppCompatActivity implements View.O
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.freeBtn) {
-            boolean removed = user.getPokemons().remove(pokemon.getName());
-            if(removed){
-                db.collection("users").document(user.getId()).set(user);
-                Toast.makeText(this, pokemon.getName() + " ha sido liberado!", Toast.LENGTH_LONG).show();
-                freeBtn.setClickable(false);
-            } else Toast.makeText(this, "No se puede soltar porque no tienes a este pokemon!", Toast.LENGTH_LONG).show();
+            Query query = db.collection("users").whereEqualTo("id", user.getId());
+            query.get().addOnCompleteListener( task -> {
+                if(task.isSuccessful()){
+                    for (DocumentSnapshot doc : task.getResult()) {
+                        user = doc.toObject(User.class);
+                        break;
+                    }
+                    boolean removed = user.getPokemons().remove(pokemon.getName());
+                    if(removed){
+                        db.collection("users").document(user.getId()).set(user);
+                        Toast.makeText(this, pokemon.getName() + " ha sido liberado!", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(this, "No se puede soltar porque no tienes a este pokemon!", Toast.LENGTH_LONG).show();
+                    }
+                    freeBtn.setClickable(false);
+                } else {
+                    Toast.makeText(this, "Error, no se ha podido liberar a este pokemon!", Toast.LENGTH_LONG).show();
+                }
+            });
+
         }
     }
 
